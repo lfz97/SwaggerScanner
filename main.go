@@ -1,13 +1,13 @@
 package main
 
 import (
-	"swaggerScanner/myutils"
-	"swaggerScanner/swaggerParser"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"swaggerScanner/myutils"
+	"swaggerScanner/swaggerParser"
 	"sync"
 
 	"github.com/go-resty/resty/v2"
@@ -45,12 +45,25 @@ func GroupUrlsFromAllSwaggerFiles(fileList []string) []swaggerParser.UrlInfo {
 }
 
 // 获取指定目录下的所有Swagger文件名
-func GetSwaggerFileNamesFromDir(dirPath string) ([]string, error) {
+func GetSwaggerFileNamesFromDir(dirPath string) ([]string, error, bool) {
+	dirExists := false
+	_, err := os.Stat(dirPath)
+	if os.IsNotExist(err) == true {
+		er := os.Mkdir(dirPath, 0777)
+		if er != nil {
+			return nil, fmt.Errorf("directory does not exist ,and created failed: %s", dirPath), dirExists
+		}
+		return nil, fmt.Errorf("directory does not exist , created successfully!: %s", dirPath), dirExists
+	} else if err == nil {
+		dirExists = true
+	} else {
+		return nil, fmt.Errorf("directory exists but error occurred: %s", err), dirExists
+	}
 	fileList := []string{}
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		fmt.Println("Read dir failed:", err)
-		return nil, err
+		return nil, err, dirExists
 	}
 	for _, file := range files {
 		if !file.IsDir() {
@@ -58,7 +71,7 @@ func GetSwaggerFileNamesFromDir(dirPath string) ([]string, error) {
 
 		}
 	}
-	return fileList, nil
+	return fileList, nil, dirExists
 }
 
 type ReqResult struct {
@@ -391,12 +404,24 @@ func ExportResultsToCsvFile[T CsvRecord](Results_s []T, filePath string) error {
 
 func main() {
 
-	fileList, err := GetSwaggerFileNamesFromDir("请将所有Swagger.json放入此文件夹")
+	fileList, err, dirExists := GetSwaggerFileNamesFromDir("请将所有Swagger.json放入此文件夹")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	if dirExists == false {
+		fmt.Println(err)
+		return
+	}
+	if len(fileList) == 0 {
+		fmt.Println("没有找到Swagger文件，请将Swagger.json放入指定文件夹")
+		return
+	}
 	UrlInfo_s := GroupUrlsFromAllSwaggerFiles(fileList)
+	if len(UrlInfo_s) == 0 {
+		fmt.Println("没有找到有效的URL信息，请检查Swagger文件格式")
+		return
+	}
 
 	AllUrlResults_s, AllUrlWithoutParamResults_s := ScanAllUrls(UrlInfo_s, 8)
 	err = ExportResultsToCsvFile(AllUrlResults_s, "扫描结果.csv")
