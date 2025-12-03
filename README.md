@@ -28,7 +28,19 @@ swaggerParser/
 ```
 
 ## **使用步骤**
-1. **准备 Swagger 文件**
+
+
+1. **安装依赖**
+   ```bash
+   go mod tidy
+   ```
+
+2. **构建**
+   ```bash
+   go build
+   ```
+   
+3. **准备 Swagger 文件**
    - 确保 `swagger.json` 中包含以下字段：
      ```json
      {
@@ -39,19 +51,14 @@ swaggerParser/
      ```
    - 当前仅支持单协议（`http` 或 `https`）。
 
-2. **放置文件**
-   - 将所有需要扫描的 `swagger.json` 文件放入指定文件夹（工具会自动创建）。
-
-3. **安装依赖**
+4. **放置文件**
+   - 将所有需要扫描的 `swagger.json` 文件放入指定名称文件夹文件夹`请将所有Swagger.json放入此文件夹`（如果没有这个文件夹就先运行一下工具会自动创建）。
+     
+5. **运行并开始扫描**
    ```bash
-   go mod tidy
+   swaggerScanner.exe
    ```
-
-4. **运行扫描**
-   ```bash
-   go run main.go
-   ```
-
+   
 ## **输出结果**
 扫描完成后，会生成一个 CSV 文件，方便后续分析和处理。
 
